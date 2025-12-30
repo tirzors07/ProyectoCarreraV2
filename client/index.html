@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="./style/style.css">
+    <title>Root Labs</title>
+</head>
+
+<body>
+    <header>
+        <div class="named">
+            <h1>ESP32</h1>
+        </div>
+        <div class="navbar">
+            <nav>
+                <ul>
+                    <li> <a href="#">Home</a></li>
+                    <li><a href="#">About US</a></li>
+                    <li><a href="#">ESP32 LABS</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="boxy2">
+        <div class="container">
+            <div class="glass-box">
+                <img class="logo" src="./assets/Logo_glass.png" alt="">
+                <form id="loginForm" class="login">
+                    <div class="input-container">
+                        <input id="texto" type="text" name="username" placeholder="Usuario">
+                    </div>
+                    <div class="password-container">
+                        <input id="contra" type="password" name="password" placeholder="Contraseña">
+                        <i class="fas fa-lock icon password-icon"></i>
+                    </div>
+
+                    <div class="opciones">
+                        <label><input type="checkbox" name="remember"> Recordarme</label>
+                        <a href="#">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    <button id="boton" type="submit">Login</button>
+                    <h4>¿No tienes una cuenta? <a  href="register.html">Regístrate</a></h4>
+                </form>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <div class="logo-section">
+                <img src="./assets/logo.png" alt="">
+                <button class="donate-btn">DONATE NOW ↗</button>
+            </div>
+            <div class="footer-section">
+                <h2>Learn</h2>
+                <hr>
+                <ul>
+                    <li><a href="#"></a>Trailheads & Maps</li>
+                    <li><a href="#"></a>History</li>
+                    <li><a href="#"></a>Ecology</li>
+                    <li><a href="#"></a>Partners</li>
+                    <li><a href="#"></a>News</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-botom">
+            <p>2025 RTirzo</p>
+            <p>Design by rTirzo</p>
+        </div>
+    </footer>
+    <script>
+        const form = document.getElementById('loginForm');
+        const errorMsg = document.createElement('p');
+        errorMsg.style.color = "red";
+        form.parentNode.appendChild(errorMsg);
+        form.addEventListener("submit",async (e) =>{
+            e.preventDefault();
+            const username = document.getElementById('texto').value;
+            const password = document.getElementById('contra').value;
+            try{
+                const response = await fetch("/login",{
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    credentials: "include", 
+                    body: JSON.stringify({username, password})
+                })
+                if(response.ok){
+                    const user = await response.json();
+                    console.log('Login successful:', user);
+                    window.location.href = "/protected.html";
+                }else{
+                    const err = await response.text();
+                    errorMsg.style.display = "block";
+                    errorMsg.textContent = err;
+                }
+            }catch(error){
+                console.error('Error en login:', error);
+                errorMsg.style.display = "block";
+                errorMsg.textContent = "Error en el servidor. Inténtalo de nuevo más tarde.";
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,177 @@
+
+</html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="./style/style-register.css">
+    <title>Registro Usuario</title>
+</head>
+<body>
+    <header>
+        <h1>ESP32</h1>
+        <div class="navbar">
+            <nav>
+                <ul>
+                    <li> <a href="#">Home</a></li>
+                    <li><a href="#">About US</a></li>
+                    <li><a href="#">ESP32 LABS</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <div class="boxy2">
+        <div class="container">
+            <img class="logo" src="logo.png" alt="">
+            <h2 >Crea una cuenta</h2>
+            <form id="registro" class="login" novalidate>
+                <input id="texto" type="text" name="fullname" placeholder="Nombre">
+                <small class="error-msg" id="error-fullname"></small>
+                <input id="texto" type="email" name="email" placeholder="Correo electrónico">
+                <small class="error-msg" id="error-email"></small>
+                <div class="password-container">
+                    <input id="contra" type="password" name="password" placeholder="Contraseña">
+                </div>
+                <small class="error-msg" id="error-password"></small>
+                <div class="password-container">
+                    <input id="contra" type="password" name="confirm" placeholder="Confirmar contraseña">
+                </div>
+                <small class="error-msg" id="error-confirm"></small>
+                <div class="opciones">
+                    <label><input type="checkbox" id="terms"> Aceptar términos y condiciones</label>
+                </div>
+                <small class="error-msg" id="error-terms"></small>
+
+                <button id="boton" type="submit">Crear cuenta</button>
+                <small class="success-msg" id="success-msg"></small>
+
+                <h4>¿Ya tienes una cuenta?<a  href="index.html">Inicia Sesión</a></h4>
+            </form>
+        </div>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <div class="logo-section">
+                <img src="./assets/logo.png" alt="">
+                <button class="donate-btn">DONATE NOW ↗</button>
+            </div>
+            <div class="footer-section">
+                <h2>Take Action</h2>
+                <hr>
+                <ul>
+                    <li><a href="#"></a>Oportunities</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h2>Learn</h2>
+                <hr>
+                <ul>
+                    <li><a href="#"></a>Trailheads & Maps</li>
+                    <li><a href="#"></a>History</li>
+                    <li><a href="#"></a>Ecology</li>
+                    <li><a href="#"></a>Partners</li>
+                    <li><a href="#"></a>News</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h2>NULL</h2>
+                <hr>
+                <ul>
+                    <li><a href="#"></a>NULL</li>
+                    <li><a href="#"></a>Enable</li>
+                    <li><a href="#"></a>Enable</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-botom">
+            <p>2025 RTirzo</p>
+            <p>Design by rTirzo</p>
+        </div>
+    </footer>
+    <script>
+        // Elementos del DOM
+        const form = document.getElementById('registro');
+        const fullname = form.fullname;
+        const email = form.email;
+        const password = form.password;
+        const confirm = form.confirm;
+        const terms = document.getElementById('terms');
+        // Mensajes
+        const errorFull = document.getElementById('error-fullname');
+        const errorEmail = document.getElementById('error-email');
+        const errorPass = document.getElementById('error-password');
+        const errorConfirm = document.getElementById('error-confirm');
+        const errorTerms = document.getElementById('error-terms');
+        const successMsg = document.getElementById('success-msg');
+        // Expresión regular para email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // Validación on submit
+        form.addEventListener('submit',async function (e) {
+            e.preventDefault();
+            let valid = true;
+            // Reset mensajes
+            [errorFull, errorEmail, errorPass, errorConfirm, errorTerms, successMsg].forEach(el => el.textContent = '');
+            // Nombre completo
+            if (fullname.value.trim().length < 3) {
+                errorFull.textContent = 'Mínimo 3 caracteres'; valid = false;
+            }
+            // Email
+            if (!emailRegex.test(email.value.trim())) {
+                errorEmail.textContent = 'Email inválido'; valid = false;
+            }
+            // Password
+            if (password.value.length < 8) {
+                errorPass.textContent = 'Mínimo 8 caracteres'; valid = false;
+            }
+            // Confirmacion
+            if (confirm.value !== password.value || confirm.value === '') {
+                errorConfirm.textContent = 'No coincide'; valid = false;
+            }
+            // Términos
+            if (!terms.checked) {
+                errorTerms.textContent = 'Debe aceptar'; valid = false;
+            }
+            if (valid) {
+                try {
+                    const response = await fetch("http://localhost:3000/register", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            username: fullname.value.trim(),
+                            _email: email.value.trim(),
+                            password: password.value
+                        })
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        successMsg.textContent = "¡Cuenta creada con éxito!";
+                        console.log("Usuario creado:", data);
+
+                        setTimeout(() => {
+                            window.location.href = "/index.html"; // redirige al login
+                        }, 2000);
+                    } else {
+                        const err = await response.text();
+                        successMsg.style.color = "red";
+                        successMsg.textContent = err;
+                    }
+                } catch (error) {
+                    console.error("Error en registro:", error);
+                    successMsg.style.color = "red";
+                    successMsg.textContent = "Error en el servidor. Intenta de nuevo.";
+                }
+            }
+        });
+        // Validacion en tiempo real
+        [fullname, email, password, confirm].forEach(input => {
+            input.addEventListener('input', () => {
+                form.dispatchEvent(new Event('submit', { cancelable: true }));
+            });
+        });
+    </script>
+</body>
+
+</html>

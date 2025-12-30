@@ -1,0 +1,485 @@
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="./style/style-auth.css">
+    <title>Privacy</title>
+</head>
+<body>
+    <header>
+        <h1>ESP-NOW V2</h1>
+        <div class="navbar">
+            <nav>
+                <ul>
+                    <li><a id="menu-home" href="#">Home</a></li>
+                    <li><a id="menu-config-mesh" href="#">Configurar Mesh</a></li>
+                    <li><a id="menu-mesh-dashboard" href="#">Mesh Dashboard</a></li>
+                    <li><button id="logout" class="btn-logout">Cerrar sesión</button></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <div class="container" id="main-content">
+        <div class="espnow">
+            <img class="beau" src="./assets/espnow.png" alt="">
+            <div class="description">
+                <h3>ESP-NOW PROTOCOL</h3>
+                <p>
+                    ESP-NOW is a connectionless communication protocol created by Espressif, designed for short packet
+                    transmission. It allows multiple devices to communicate without relying on Wi-Fi.
+                    <br>
+                    <br>
+                    This swift protocol facilitates the exchange of small messages (up to 250 bytes) among ESP32 boards.
+                    ESP-NOW offers versatility, accommodating both one-way and two-way communication in various setups.
+                </p>
+            </div>
+        </div>
+        <h1 class="mensaje-b">Hi</h1>
+        <h2 id="welcome"></h2>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <div class="logo-section">
+                <img src="./assets/logo.png" alt="">
+                <button class="donate-btn">DONATE NOW ↗</button>
+            </div>
+            <div class="footer-section">
+                <h2>Take Action</h2>
+                <hr>
+                <ul>
+                    <li><a href="#"></a>Oportunities</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h2>Learn</h2>
+                <hr>
+                <ul>
+                    <li><a href="#"></a>Trailheads & Maps</li>
+                    <li><a href="#"></a>History</li>
+                    <li><a href="#"></a>Ecology</li>
+                    <li><a href="#"></a>Partners</li>
+                    <li><a href="#"></a>News</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h2>NULL</h2>
+                <hr>
+                <ul>
+                    <li><a href="#"></a>NULL</li>
+                    <li><a href="#"></a>Enable</li>
+                    <li><a href="#"></a>Enable</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-botom">
+            <p>2025 RTirzo</p>
+            <p>Design by rTirzo</p>
+        </div>
+    </footer>
+    <script>
+        let vistaActual = "home";
+        let alertasCache = [];
+        let alertasPendientes = 0;
+        const container = document.getElementById("main-content");
+        document.getElementById("menu-config-mesh").addEventListener("click", (e) => {
+            e.preventDefault();
+            cargarConfigMesh();
+        });
+        document.getElementById("menu-mesh-dashboard").addEventListener("click", (e) => {
+            e.preventDefault();
+            cargarMeshDashboard();
+        });
+        document.getElementById("menu-home").addEventListener("click", (e) => {
+            e.preventDefault();
+            cargarHome();
+        });
+        async function cargarConfigMesh() {
+            vistaActual = "config";
+            container.innerHTML = `
+                <h1 class="titulo-mesh">Red de Nodos</h1>
+                <canvas id="canvas" width="600" height="500"></canvas>
+                <div style="margin-top:10px; text-align:center;">
+                    <button id="btnApplyMesh" class="btn-mesh">
+                        Guardar Configuracion Mesh
+                    </button>
+                </div>
+            `;
+            inicializarMesh();
+            // SOLO cargar una vez al inicio desde DB
+            await cargarNodosDesdeBD();
+            await cargarLinksDesdeDB();
+            // IMPORTANTE: Inicializar animaciones para TODOS los nodos
+            nodos.forEach(n => {
+                if (!animaciones[n.id]) {
+                    animaciones[n.id] = 30;
+                }
+            });
+            // Dibujar todo (incluyendo nodos que llegaron mientras estabas en otra vista)
+            dibujarTodo();
+            document
+                .getElementById("btnApplyMesh")
+                .addEventListener("click", aplicarMesh);
+        }
+        function cargarMeshDashboard() {
+            vistaActual = "dashboard";
+            alertasPendientes = 0;
+            actualizarBadgeAlertas();
+            container.innerHTML = `
+                <h1 class="titulo-mesh">Dashboard del Mesh</h1>
+                <h3>Alertas recientes</h3>
+                <table id="alerts-table" border="1" cellspacing="0" cellpadding="5">
+                    <thead>
+                        <tr>
+                            <th># Alerta</th>
+                            <th>Nodo (Nombre - MAC)</th>
+                            <th>Rol</th>
+                            <th>Traceroute (Path)</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button id="btn-clear-alerts" class="btn-mesh" style="margin-top:20px">Borrar Alertas</button>
+            `;
+            cargarAlertas();
+            document.getElementById("btn-clear-alerts").addEventListener("click", async () => {
+                if (!confirm("¿Deseas borrar todas las alertas?")) return;
+                await fetch("/api/alerts", { method: "DELETE" });
+                cargarAlertas();
+            });
+        }
+        function cargarHome() {
+            vistaActual = "home";
+            container.innerHTML = `
+                <div class="espnow">
+                    <img class="beau" src="./assets/espnow.png" alt="">
+                    <div class="description">
+                        <h3>ESP-NOW PROTOCOL</h3>
+                        <p>
+                            ESP-NOW is a connectionless communication protocol created by Espressif,
+                            designed for short packet transmission.
+                            <br><br>
+                            This swift protocol facilitates the exchange of small messages
+                            (up to 250 bytes) among ESP32 boards.
+                        </p>
+                    </div>
+                </div>
+                <h1 class="mensaje-b">Hi</h1>
+                <h2 id="welcome"></h2>`;
+        }
+        function actualizarBadgeAlertas() {
+            const menuDashboard = document.getElementById("menu-mesh-dashboard");
+            if (alertasPendientes > 0) {
+                menuDashboard.textContent = `Mesh Dashboard (${alertasPendientes})`;
+                menuDashboard.style.color = "red";
+                menuDashboard.style.fontWeight = "bold";
+            } else {
+                menuDashboard.textContent = "Mesh Dashboard";
+                menuDashboard.style.color = "";
+                menuDashboard.style.fontWeight = "";
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script>
+        if (!window.socket) {
+            window.socket = io("http://127.0.0.1:3000");
+            console.log("Socket inicializado");
+        }
+        const ROLE_PRIORITY = {
+            root: 3,
+            parent: 2,
+            intermediario: 2, // por si usas ambos nombres
+            leaf: 1,
+            baliza: 1
+        };
+        const socket = window.socket;
+        var canvas = null;
+        var ctx = null;
+        var nodos = [];
+        var conexiones = [];
+        var seleccionados = [];
+        var animaciones = {};
+        // Al cargar sección Configurar Mesh se inicializa canvas
+        function inicializarMesh() {
+            canvas = document.getElementById("canvas");
+            ctx = canvas.getContext("2d");
+            canvas.addEventListener("click", onCanvasClick);
+        }
+        socket.on("node_registered", data => {
+            console.log("Nodo registrado desde ESP32:", data);
+            // Verificar si ya existe en el array de nodos
+            const existe = nodos.find(n => n.id === data.id);
+            if (existe) {
+                console.log("Nodo ya existe en canvas, ignorando");
+                return;
+            }
+            // Si NO estoy en la vista config, guardar en memoria
+            if (vistaActual !== "config") {
+                console.log("No estás en config-mesh, guardando para después");
+                // Agregar al array (aunque no se dibuje aún)
+                nodos.push({
+                    id: data.id,
+                    x: data.x,
+                    y: data.y,
+                    rol: data.rol,
+                    alias: data.alias || ""
+                });
+                return;
+            }
+            // Si estoy en config y el canvas está listo, dibujar
+            if (canvas && ctx) {
+                agregarNodoVisual(data.id, data.rol, data.alias, data.x, data.y);
+            } else {
+                console.warn("Canvas no inicializado, pero estoy en config");
+                // Agregar al array de todas formas
+                nodos.push({
+                    id: data.id,
+                    x: data.x,
+                    y: data.y,
+                    rol: data.rol,
+                    alias: data.alias || ""
+                });
+            }
+        });
+        socket.on("new_alert", alertData => {
+            console.log("Nueva alerta recibida en tiempo real:", alertData);
+            // Agregar al cache
+            alertasCache.push(alertData);
+            // Si NO estoy en dashboard, no hacer nada más
+            if (vistaActual !== "dashboard") {
+                alertasPendientes++;
+                actualizarBadgeAlertas(); //con esto aseguramos que el badge se actualice
+                return;
+            }
+            // Si estoy en dashboard, agregar la fila
+            agregarFilaAlerta(alertData);
+        });
+        function agregarFilaAlerta(alertData) {
+            const tbody = document.querySelector("#alerts-table tbody");
+            if (!tbody) {
+                console.warn("Tabla no encontrada");
+                return;
+            }
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${tbody.children.length + 1}</td>
+                <td>${alertData.alias || 'Desconocido'} (${alertData.mac})</td>
+                <td>${alertData.role || 'Desconocido'}</td>
+                <td style="font-size:11px; color:#0066cc;">${alertData.path || 'N/A'}</td>
+                <td>${new Date(alertData.created_at).toLocaleString()}</td>
+            `;
+            // Agregar con animación suave
+            tr.style.backgroundColor = "#ffeb3b";
+            tbody.appendChild(tr);
+            // Quitar highlight después de 2 segundos
+            setTimeout(() => {
+                tr.style.transition = "background-color 1s ease";
+                tr.style.backgroundColor = "transparent";
+            }, 2000);
+        }
+        // Función para agregar visualmente
+        function agregarNodoVisual(mac, rol, alias = "", x = null, y = null) {
+            if (!canvas || !ctx) return;
+            // Si NO se proporcionan coordenadas, generar aleatorias válidas
+            if (x === null || y === null) {
+                let ok = false;
+                while (!ok) {
+                    x = Math.random() * canvas.width;
+                    y = Math.random() * canvas.height;
+                    ok = nodos.every(n => Math.hypot(n.x - x, n.y - y) > 60);
+                }
+            }
+            nodos.push({ id: mac, x, y, rol, alias });
+            animaciones[mac] = 5;
+            expandir(mac);
+            dibujarTodo();
+        }
+        function dibujarTodo() {
+            if (!canvas || !ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            //las conexiones entre nodos
+            conexiones.forEach(conn => {
+                let n1 = nodos.find(n => n.id === conn.nodo1);
+                let n2 = nodos.find(n => n.id === conn.nodo2);
+                if (n1 && n2) {
+                    ctx.beginPath();
+                    ctx.moveTo(n1.x, n1.y);
+                    ctx.lineTo(n2.x, n2.y);
+                    ctx.strokeStyle = "black";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+            //dibujar los nodos
+            nodos.forEach(n => {
+                let r = animaciones[n.id] || 30;
+                // Círculo
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+                ctx.fillStyle = n.rol === "root" ? "green" :
+                    n.rol === "intermediario" ? "yellow" :
+                        n.rol === "parent" ? "orange" :
+                            "blue"; // leaf o intermediario
+                ctx.fill();
+                ctx.stroke();
+                // Texto: MAC arriba
+                ctx.fillStyle = "black";
+                ctx.font = "12px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(n.id, n.x, n.y - (r + 12));
+                // Texto: ROL abajo
+                ctx.fillStyle = "gray";
+                ctx.font = "14px Arial";
+                ctx.fillText(n.rol, n.x, n.y + r + 14);
+                if (n.alias) {
+                    ctx.fillStyle = "purple"; // color opcional
+                    ctx.font = "12px Arial";
+                    ctx.fillText(n.alias, n.x, n.y + r + 28);
+                }
+            });
+        }
+        function expandir(id) {
+            function anim() {
+                if (animaciones[id] < 30) {
+                    animaciones[id] += 1;
+                    dibujarTodo();
+                    requestAnimationFrame(anim);
+                }
+            }
+            anim();
+        }
+        function onCanvasClick(event) {
+            let rect = canvas.getBoundingClientRect();
+            let x = event.clientX - rect.left;
+            let y = event.clientY - rect.top;
+
+            let nodoClic = nodos.find(n =>
+                Math.hypot(n.x - x, n.y - y) < 30
+            );
+
+            if (!nodoClic) return;
+
+            if (!seleccionados.includes(nodoClic.id)) {
+                seleccionados.push(nodoClic.id);
+            }
+
+            if (seleccionados.length === 2) {
+                const n1 = nodos.find(n => n.id === seleccionados[0]);
+                const n2 = nodos.find(n => n.id === seleccionados[1]);
+                if (!n1 || !n2) {
+                    seleccionados = [];
+                    return;
+                }
+                const p1 = ROLE_PRIORITY[n1.rol] || 0;
+                const p2 = ROLE_PRIORITY[n2.rol] || 0;
+                //mismo nivel → no permitido
+                if (p1 === p2) {
+                    alert("No puedes conectar nodos del mismo nivel jerárquico");
+                    seleccionados = [];
+                    return;
+                }
+                // determinar padre e hijo automáticamente
+                const parent = p1 > p2 ? n1.id : n2.id;
+                const child = p1 > p2 ? n2.id : n1.id;
+                //evitar que un root sea hijo
+                if (nodos.find(n => n.id === child)?.rol === "root") {
+                    alert("El root no puede ser hijo");
+                    seleccionados = [];
+                    return;
+                }
+                //evitar duplicados
+                const existe = conexiones.some(c =>
+                    c.nodo1 === parent && c.nodo2 === child
+                );
+                if (existe) {
+                    seleccionados = [];
+                    return;
+                }
+                conexiones.push({ nodo1: parent, nodo2: child });
+                socket.emit("mesh_link_added", {
+                    parent,
+                    child
+                });
+                seleccionados = [];
+            }
+            dibujarTodo();
+        }
+        async function cargarNodosDesdeBD() {
+            const res = await fetch("/api/mesh/nodes");
+            const nodes = await res.json();
+            // NO limpiar, solo agregar los que no existen
+            nodes.forEach(n => {
+                const existe = nodos.find(node => node.id === n.mac);
+                if (!existe) {
+                    nodos.push({
+                        id: n.mac,
+                        x: n.x,
+                        y: n.y,
+                        rol: n.role,
+                        alias: n.alias
+                    });
+                    animaciones[n.mac] = 30;
+                }
+            });
+            dibujarTodo();
+        }
+        async function cargarLinksDesdeDB() {
+            const res = await fetch("/api/mesh/links");
+            const data = await res.json();
+            conexiones = [];
+            data.forEach(l => {
+                conexiones.push({
+                    nodo1: l.parent_mac,
+                    nodo2: l.child_mac
+                });
+            });
+            dibujarTodo();
+        }
+        function aplicarMesh() {
+            if (!confirm("¿Aplicar configuración mesh al ESP32 Root?")) return;
+            console.log(">> Apply mesh enviado al backend");
+            socket.emit("apply_mesh");
+        }
+        // Cargar alertas desde backend
+        async function cargarAlertas() {
+            const res = await fetch("/api/alerts");
+            alertasCache = await res.json();
+            const tbody = document.querySelector("#alerts-table tbody");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            alertasCache.forEach((a, i) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${a.alias || 'Desconocido'} (${a.mac})</td>
+                    <td>${a.role || 'Desconocido'}</td>
+                    <td style="font-size:11px; color:#0066cc;">${a.path || 'N/A'}</td>
+                    <td>${new Date(a.created_at).toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+    <script>
+        // validar si hay sesin activa
+        async function checkSession() {
+            const res = await fetch("/protected", { credentials: "include" });
+            if (res.ok) {
+                const user = await res.json();
+                document.getElementById("welcome").textContent = "Hola " + user.username;
+            } else {
+                window.location.href = "/";
+            }
+        }/*logout*/
+        document.getElementById("logout").addEventListener("click", async () => {
+            await fetch("/logout", { method: "POST", credentials: "include" });
+            window.location.href = "/";
+        });
+        checkSession();
+    </script>
+</body>
+</html>

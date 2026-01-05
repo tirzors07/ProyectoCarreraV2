@@ -194,8 +194,8 @@ const transporter = nodemailer.createTransport({
     port: 587,                     // 465 para SSL, 587 para TLS
     secure: false,                 // true para SSL
     auth: {
-        user: "tirzors07@gmail.com",
-        pass: "bubx hvml eidg mfww"
+        user: "user01@gmail.com",
+        pass: "my_passsssssssssssssssssssssssssssssssssssssssssssssssssss"
     },
     tls: {
         rejectUnauthorized: false
@@ -213,7 +213,7 @@ async function enviarCorreoAlerta(mac, alias) {
         }
         const info = await transporter.sendMail({
             from: '"Sistema de Alertas" <tirzors07@gmail.com>',
-            to: "rtirzo@uabc.edu.mx",
+            to: "user02@uabc.edu.mx",
             subject: `Nueva alerta de nodo ${alias}`,
             text: `Se ha recibido una nueva alerta del nodo ${alias} (MAC: ${mac})`,
             html: `<p>Se ha recibido una <b>nueva alerta</b> del nodo <b>${alias}</b> (MAC: ${mac})</p>`
@@ -245,4 +245,5 @@ async function generarCoordenadasSinColision() {
         y = 250;
     }
     return { x, y };
+
 }

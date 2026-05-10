@@ -13,10 +13,10 @@ const pool = mysql.createPool({
 async function test() {
   try {
     const [rows] = await pool.query("SELECT NOW() AS now");
-    console.log("✅ Conexión exitosa:", rows);
+    console.log("Conexión exitosa:", rows);
     process.exit(0);
   } catch (err) {
-    console.error("❌ Error de conexión:", err.message);
+    console.error("Error de conexión:", err.message);
     process.exit(1);
   }
 }
